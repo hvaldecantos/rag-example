@@ -1,9 +1,8 @@
-import os
 from typing import TypedDict, Sequence, Annotated
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages  # a reducer function
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
-from IPython.display import Image, display
+from utils.graph_image import display_graph
 
 
 class AgentState(TypedDict):
@@ -23,12 +22,9 @@ graph.add_edge("llm", END)
 
 agent = graph.compile()
 
-filename = "rag_example_grph.png"
+filename = "docs/rag_example_grph.png"
 
-graph_image = agent.get_graph().draw_mermaid_png()
-with open(filename, 'wb') as f:
-    f.write(graph_image)
-display(Image(graph_image))
+display_graph(agent.get_graph(), filename=filename)
 
 result = agent.invoke(AgentState(
     messages=[HumanMessage(content="hello node!")]))

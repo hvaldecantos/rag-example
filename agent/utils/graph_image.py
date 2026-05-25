@@ -1,8 +1,6 @@
 import os
 from typing import Optional
 
-from IPython.display import Image, display
-
 
 def display_graph(abot_graph, filename: Optional[str] = None) -> None:
 
@@ -14,6 +12,5 @@ def display_graph(abot_graph, filename: Optional[str] = None) -> None:
             else:
                 with open(filename, 'wb') as f:
                     f.write(graph_image)
-        display(Image(graph_image))
     except Exception as e:
-        print("Error displaying graph:", e)
+        print("Error generating and saving graph image:", e)

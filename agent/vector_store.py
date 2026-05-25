@@ -10,8 +10,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 load_dotenv()
 
-PERSIST_DIRECTORY = "./" + os.getenv("PERSIST_DIRECTORY")
-DOCUMENTS_DIRECTORY = "./" + os.getenv("DOCUMENTS_DIRECTORY")
+PERSIST_DIRECTORY = os.getenv("PERSIST_DIRECTORY")
+DOCUMENTS_DIRECTORY = os.getenv("DOCUMENTS_DIRECTORY")
 COLLECTION_NAME = os.getenv("DEFAULT_COLLECTION_NAME")
 
 embeddings = BedrockEmbeddings(

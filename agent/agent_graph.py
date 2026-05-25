@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from langchain_aws import ChatBedrockConverse
 from langchain_core.messages import BaseMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
@@ -83,17 +84,20 @@ def decision_function(state: AgentState) -> bool:
 
 system_prompt = """
 You are an AI assistant who answers questions using information loaded into your knowledge base.
-Use the retriever tool available to answer questions grounded in those documents. You can make multiple calls if needed.
+Use the retriever_tool available to answer questions grounded in those documents. You can make multiple calls if needed.
 If you need to look up some information before asking a follow up question, you are allowed to do that!
 Always reference sources using the value of `source_reference` from retrieved chunks.
 
-IMPORTANT: When citing sources in your answer, always use the exact format (name.pdf, pag. XX, conf. XX%) as provided by the retriever tool.
+IMPORTANT: When citing sources in your answer include the name, page, and confidence level; always use this exact format: '(name.pdf, pag. XX, conf. XX%)' that is provided by the retriever_tool.
 Every factual claim must be followed by its source citation from the retrieved chunks.
 """
 
 
 def llm_node(state: AgentState) -> AgentState:
     """A simple node for using an LLM to generate a response based on the conversation history."""
+    # print("\n=== LLM NODE ===")
+    # print(state)
+    # print("=====================")
     messages = list(state['messages'])
     messages = [SystemMessage(content=system_prompt)] + messages
     message = llm.invoke(messages)
@@ -121,7 +125,7 @@ def retriever_node(state: AgentState) -> AgentState:
         results.append(ToolMessage(
             tool_call_id=t['id'], name=t['name'], content=str(result)))
 
-    print("Tools Execution Complete. Back to the model!")
+    # print("Tools Execution Complete. Back to the model!")
     return {'messages': results}
 
 
@@ -137,4 +141,4 @@ graph.add_conditional_edges(
 graph.add_edge("retriever", "llm")
 graph.add_edge(START, "llm")
 
-agent: CompiledStateGraph = graph.compile()
+agent: CompiledStateGraph = graph.compile(checkpointer=MemorySaver())

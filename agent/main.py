@@ -22,7 +22,8 @@ def cmd_graph(args):
 
 def cmd_run(args):
     """Start the interactive RAG agent."""
-    print("\n=== RAG AGENT ===")
+    session_id = args.session_id
+    print(f"\n=== RAG AGENT (session: {session_id}) ===")
     print("Type 'exit' or 'quit' to stop.\n")
 
     while True:
@@ -31,7 +32,10 @@ def cmd_run(args):
             break
 
         messages = [HumanMessage(content=user_input)]
-        result = agent.invoke(AgentState(messages=messages))
+        result = agent.invoke(
+            AgentState(messages=messages),
+            config={"configurable": {"thread_id": session_id}},
+        )
 
         print("\n=== ANSWER ===")
         print(result["messages"][-1].content)
@@ -45,7 +49,14 @@ def main():
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     subparsers.add_parser("build", help="Rebuild the vector store embeddings.")
-    subparsers.add_parser("run", help="Start the interactive RAG agent.")
+
+    run_parser = subparsers.add_parser(
+        "run", help="Start the interactive RAG agent.")
+    run_parser.add_argument(
+        "-s", "--session-id",
+        default="default",
+        help="Session ID used to persist conversation history (default: default).",
+    )
 
     graph_parser = subparsers.add_parser(
         "graph", help="Save an image of the agent graph.")

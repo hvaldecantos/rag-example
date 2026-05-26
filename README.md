@@ -29,7 +29,7 @@ EMBEDDINGS_MODEL_ID="amazon.titan-embed-text-v2:0"
 RETRIEVER_TOOL_PROMPT="Search and return relevant excerpts from the available PDFs about ..."
 PERSIST_DIRECTORY = "./embeddings/"
 DOCUMENTS_DIRECTORY = "./embeddings/documents"
-DEFAULT_COLLECTION_NAME = "general"
+COLLECTION_NAME = "general"
 ```
 
 Then build the vector store by indexing all PDFs in `DOCUMENTS_DIRECTORY`:
@@ -49,7 +49,7 @@ This embeds all documents into the local ChromaDB store. Re-run `build` whenever
 | `RETRIEVER_TOOL_PROMPT` | Prompt for the retriever tool behavior | `Search and return relevant excerpts from the available PDFs about AWS sustainability summary.` |
 | `DOCUMENTS_DIRECTORY` | Path to folder containing PDF files (searched recursively) | `./embeddings/documents` |
 | `PERSIST_DIRECTORY` | Where to store ChromaDB embeddings | `./embeddings` |
-| `DEFAULT_COLLECTION_NAME` | ChromaDB collection name | `general` |
+| `COLLECTION_NAME` | ChromaDB collection name | `general` |
 
 ### Note: Inference Profiles vs. Model IDs
 
@@ -101,3 +101,85 @@ uv run agent/main.py graph --output ./docs/my_graph.png
 | Flag | Default | Description |
 |------|---------|-------------|
 | `-o`, `--output` | `./docs/rag_example_graph.png` | Output file path for the graph image |
+
+## Example
+
+This is an example that uses document from the sustainability report publish by Amazon in https://sustainability.aboutamazon.com/reports. These are documents included in this repo:
+
+```bash
+documents/
+├── 2021-sustainability-executive-summary.pdf
+├── 2022-sustainability-executive-summary.pdf
+├── 2023-sustainability-executive-summary.pdf
+└── 2024-sustainability-executive-summary.pdf
+```
+
+1. Set all environment variables
+
+```bash
+PERSIST_DIRECTORY = "my_embeddings/"
+DOCUMENTS_DIRECTORY = "documents/"
+COLLECTION_NAME = "sustenability_reports"
+```
+
+2. Run the rag agent:
+
+```bash
+    $ uv run agent/main.py run
+```
+
+3. Ask a question:
+
+```text
+What is your question: What was the total water consumption of aws in 2022?
+
+=== ANSWER ===
+Based on my search of the available sustainability documents, I was unable to find a specific figure for the **total water consumption** of AWS in 2022. 
+
+However, the documents do provide related water efficiency metrics for AWS data centers in 2022:
+
+- AWS achieved a water use efficiency (WUE) of **0.19 liters of water per kilowatt-hour (L/kWh)** for data centers in 2022, which represented a 24% improvement from 0.25 L/kWh in 2021 (2022-sustainability-executive-summary.pdf, pag. 11, conf. 79.5%)
+
+The documents focus on water efficiency metrics and water replenishment goals rather than absolute water consumption figures. To get the total water consumption of AWS in 2022, you may need to consult additional AWS sustainability reports or contact AWS directly for comprehensive water withdrawal data.
+
+--- TOKEN USAGE: [Input:6681 | Output:363 | Total:7044 | Ctx window usage: 0.70%] | Answer conf.: 79.0%) ---
+```
+
+The agent has an in memory memory that enables the user to ask related questions like the following one:
+
+
+```text
+What is your question: can you compare it with 2024?
+
+=== ANSWER ===
+Based on the available sustainability documents, I can provide a comparison of AWS water use efficiency between 2022 and 2023 (the most recent data available - actual 2024 data is not yet published):
+
+## Comparison: AWS Water Use Efficiency
+
+**2022:** 0.19 liters of water per kilowatt-hour (L/kWh) (2022-sustainability-executive-summary.pdf, pag. 11, conf. 79.5%)
+
+**2023:** 0.18 liters of water per kilowatt-hour (L/kWh), representing a 5% improvement from 2022 (2023-sustainability-executive-summary.pdf, pag. 10, conf. 83.5%)
+
+This demonstrates AWS's continuous improvement in water efficiency. From 2022 to 2023, AWS improved its water use effectiveness by 5%, maintaining its leadership in water use effectiveness among cloud providers (2023-sustainability-executive-summary.pdf, pag. 10, conf. 83.5%).
+
+It's important to note that while the documents mention plans to expand water loss avoidance projects into the EU in 2024, a full 2024 sustainability report with actual water consumption figures has not been released yet in the available documents. The 2023 sustainability executive summary is the most recent data available.
+
+--- TOKEN USAGE: [Input:17357 | Output:788 | Total:18145 | Ctx window usage: 1.81%] | Answer conf.: 80.3%) ---
+
+```
+
+Questions that are unrelated to the content emmbedded in the vector store are not answered:
+
+```text
+What is your question: who won the last futbol world cup?
+
+=== ANSWER ===
+I don't have access to information about the FIFA World Cup in my knowledge base. The tools available to me are specifically designed to search and retrieve information from Amazon's sustainability executive summary documents.
+
+To answer your question about the last football World Cup, I'd recommend checking sports news websites, Wikipedia, or official FIFA sources.
+
+However, if you have any other questions about Amazon's sustainability initiatives, environmental goals, or performance metrics, I'd be happy to help with those!
+
+--- TOKEN USAGE: [Input:13577 | Output:762 | Total:14339 | Ctx window usage: 1.43%] | Answer conf.: N/A) ---
+```
+

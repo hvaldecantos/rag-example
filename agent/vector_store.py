@@ -12,7 +12,7 @@ load_dotenv()
 
 PERSIST_DIRECTORY = os.getenv("PERSIST_DIRECTORY")
 DOCUMENTS_DIRECTORY = os.getenv("DOCUMENTS_DIRECTORY")
-COLLECTION_NAME = os.getenv("DEFAULT_COLLECTION_NAME")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME", "default_collection")
 
 embeddings = BedrockEmbeddings(
     model_id="amazon.titan-embed-text-v2:0"

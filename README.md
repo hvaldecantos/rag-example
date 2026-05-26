@@ -26,7 +26,7 @@ AWS_SESSION_TOKEN=...
 
 MODEL_ID="us.anthropic.claude-haiku-4-5-20251001-v1:0"
 EMBEDDINGS_MODEL_ID="amazon.titan-embed-text-v2:0"
-RETRIEVER_TOOL_DESCRIPTION="Search and return relevant excerpts from the available PDFs about ..."
+RETRIEVER_TOOL_PROMPT="Search and return relevant excerpts from the available PDFs about ..."
 PERSIST_DIRECTORY = "./embeddings/"
 DOCUMENTS_DIRECTORY = "./embeddings/documents"
 DEFAULT_COLLECTION_NAME = "general"
@@ -46,7 +46,7 @@ This embeds all documents into the local ChromaDB store. Re-run `build` whenever
 |----------|-------------|---------|
 | `MODEL_ID` | Bedrock inference profile ID, or foundation model ID (Legacy) | `us.anthropic.claude-sonnet-4-5-20250929-v1:0` |
 | `EMBEDDINGS_MODEL_ID` | AWS Bedrock model ID for LLM and embeddings | `amazon.titan-embed-text-v2:0` |
-| `RETRIEVER_TOOL_DESCRIPTION` | Natural-language description exposed to the model for the retriever tool behavior and scope | `Search and return relevant excerpts from the available PDFs about AWS sustainability summary.` |
+| `RETRIEVER_TOOL_PROMPT` | Prompt for the retriever tool behavior | `Search and return relevant excerpts from the available PDFs about AWS sustainability summary.` |
 | `DOCUMENTS_DIRECTORY` | Path to folder containing PDF files (searched recursively) | `./embeddings/documents` |
 | `PERSIST_DIRECTORY` | Where to store ChromaDB embeddings | `./embeddings` |
 | `DEFAULT_COLLECTION_NAME` | ChromaDB collection name | `general` |

@@ -27,7 +27,7 @@ class AgentState(TypedDict):
     retrieval_confidences: NotRequired[list[float]]
 
 
-@tool(description=os.getenv("RETRIEVER_TOOL_DESCRIPTION"))
+@tool(description=os.getenv("RETRIEVER_TOOL_PROMPT"))
 def retriever_tool(query: str) -> str:
 
     # Use similarity_search_with_score to get confidence levels (higher = better match)

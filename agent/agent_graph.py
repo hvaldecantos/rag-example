@@ -13,20 +13,15 @@ from vector_store import get_vectorstore
 
 load_dotenv()
 
-
-class AgentState(TypedDict):
-    messages: Annotated[Sequence[BaseMessage], add_messages]
-
-
 llm = ChatBedrockConverse(
     model_id=os.getenv("MODEL_ID")
 )
 
-system_prompt = """
-You are an AI assistant. Please answer my query using your capabilities.
-"""
-
 vectorstore = get_vectorstore()
+
+
+class AgentState(TypedDict):
+    messages: Annotated[Sequence[BaseMessage], add_messages]
 
 
 @tool
@@ -38,10 +33,10 @@ def retriever_tool(query: str) -> str:
     # Use similarity_search_with_score to get confidence levels (higher = better match)
     docs_with_scores = vectorstore.similarity_search_with_score(query, k=5)
 
-    print("----------------------------------")
-    for doc, score in docs_with_scores:
-        print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
-    print("----------------------------------")
+    # print("----------------------------------")
+    # for doc, score in docs_with_scores:
+    #     print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
+    # print("----------------------------------")
 
     if not docs_with_scores:
         return "I found no relevant information in the available documents."

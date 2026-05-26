@@ -24,7 +24,7 @@ AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
 AWS_SESSION_TOKEN=...
 
-MODEL_ID=anthropic.claude-3-5-sonnet-20241022-v2:0
+MODEL_ID="us.anthropic.claude-haiku-4-5-20251001-v1:0"
 EMBEDDINGS_MODEL_ID="amazon.titan-embed-text-v2:0"
 PERSIST_DIRECTORY = "./embeddings/"
 DOCUMENTS_DIRECTORY = "./embeddings/documents"
@@ -43,11 +43,23 @@ This embeds all documents into the local ChromaDB store. Re-run `build` whenever
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `MODEL_ID` | AWS Bedrock model ID for LLM and embeddings | `anthropic.claude-3-5-sonnet-20241022-v2:0` |
+| `MODEL_ID` | Bedrock inference profile ID, or foundation model ID (Legacy) | `us.anthropic.claude-sonnet-4-5-20250929-v1:0` |
 | `EMBEDDINGS_MODEL_ID` | AWS Bedrock model ID for LLM and embeddings | `amazon.titan-embed-text-v2:0` |
 | `DOCUMENTS_DIRECTORY` | Path to folder containing PDF files (searched recursively) | `./embeddings/documents` |
 | `PERSIST_DIRECTORY` | Where to store ChromaDB embeddings | `./embeddings` |
 | `DEFAULT_COLLECTION_NAME` | ChromaDB collection name | `general` |
+
+### Note: Inference Profiles vs. Model IDs
+
+Newer AWS Bedrock models (e.g. Claude Sonnet 4 and later) do not support on-demand invocation directly via their foundation model ID. Use instead an **inference profile ID** as `MODEL_ID` instead:
+
+```env
+# Use inference profile ID (works with on-demand throughput)
+MODEL_ID="us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+
+# Legacy models can still use the foundation model ID directly
+MODEL_ID="anthropic.claude-3-sonnet-20240229-v1:0"
+```
 
 ## Running the Agent
 

@@ -13,9 +13,9 @@ from vector_store import get_vectorstore
 
 load_dotenv()
 
-llm = ChatBedrockConverse(
-    model_id=os.getenv("MODEL_ID")
-)
+CONTEXT_WINDOW = int(os.getenv("CONTEXT_WINDOW", 200_000))
+
+llm = ChatBedrockConverse(model_id=os.getenv("MODEL_ID"))
 
 vectorstore = get_vectorstore()
 
@@ -104,7 +104,7 @@ def print_token_summary(state: AgentState) -> None:
     total = total_input + total_output
 
     print(
-        f"\n--- TOKEN USAGE SUMMARY: [Input:{total_input} | Output:{total_output} | Total:{total} | Ratio:{total_input/max(total_output, 1):.1f}:1] ---")
+        f"\n--- TOKEN USAGE: [Input:{total_input} | Output:{total_output} | Total:{total} | Ctx window usage: {(total / CONTEXT_WINDOW) * 100:.2f}%] ---")
 
 
 def llm_node(state: AgentState) -> AgentState:

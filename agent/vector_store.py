@@ -109,5 +109,4 @@ def get_vectorstore(force_rebuild: bool = False) -> Chroma:
         print(f"{action} vector store...")
         return build_vectorstore()
 
-    print("Existing vector store found — loading without re-embedding.")
     return load_vectorstore()

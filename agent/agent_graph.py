@@ -24,11 +24,8 @@ class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
 
 
-@tool
+@tool(description=os.getenv("RETRIEVER_TOOL_DESCRIPTION"))
 def retriever_tool(query: str) -> str:
-    """
-    Search and return relevant excerpts from the available PDFs with confidence scores.
-    """
 
     # Use similarity_search_with_score to get confidence levels (higher = better match)
     docs_with_scores = vectorstore.similarity_search_with_score(query, k=5)

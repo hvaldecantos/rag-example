@@ -1,5 +1,5 @@
 import os
-from typing import Annotated, Sequence, TypedDict
+from typing import Annotated, NotRequired, Required, Sequence, TypedDict
 
 from dotenv import load_dotenv
 from langchain_aws import ChatBedrockConverse
@@ -21,7 +21,8 @@ vectorstore = get_vectorstore()
 
 
 class AgentState(TypedDict):
-    messages: Annotated[Sequence[BaseMessage], add_messages]
+    messages: Required[Annotated[Sequence[BaseMessage], add_messages]]
+    token_usage: NotRequired[dict]
 
 
 @tool(description=os.getenv("RETRIEVER_TOOL_DESCRIPTION"))
@@ -85,6 +86,27 @@ Every factual claim must be followed by its source citation from the retrieved c
 """
 
 
+def extract_token_usage(message: BaseMessage) -> dict:
+    """Extract token usage from message response_metadata."""
+    if not hasattr(message, 'usage_metadata') or not message.usage_metadata:
+        return {}
+    return {
+        'input': message.usage_metadata.get('input_tokens', 0),
+        'output': message.usage_metadata.get('output_tokens', 0),
+    }
+
+
+def print_token_summary(state: AgentState) -> None:
+    """Print total token usage for the conversation."""
+    token_usage = state.get('token_usage', {})
+    total_input = token_usage.get('total_input', 0)
+    total_output = token_usage.get('total_output', 0)
+    total = total_input + total_output
+
+    print(
+        f"\n--- TOKEN USAGE SUMMARY: [Input:{total_input} | Output:{total_output} | Total:{total} | Ratio:{total_input/max(total_output, 1):.1f}:1] ---")
+
+
 def llm_node(state: AgentState) -> AgentState:
     """A simple node for using an LLM to generate a response based on the conversation history."""
     # print("\n=== LLM NODE ===")
@@ -93,7 +115,18 @@ def llm_node(state: AgentState) -> AgentState:
     messages = list(state['messages'])
     messages = [SystemMessage(content=system_prompt)] + messages
     message = llm.invoke(messages)
-    return {'messages': [message]}
+
+    # Track token usage
+    token_usage = state.get(
+        'token_usage', {'total_input': 0, 'total_output': 0})
+    usage = extract_token_usage(message)
+    if usage:
+        token_usage['total_input'] += usage['input']
+        token_usage['total_output'] += usage['output']
+        print(
+            f"LLM Call: +{usage['input']} input, +{usage['output']} output tokens")
+
+    return AgentState(messages=[message], token_usage=token_usage)
 
 
 def retriever_node(state: AgentState) -> AgentState:
@@ -118,7 +151,7 @@ def retriever_node(state: AgentState) -> AgentState:
             tool_call_id=t['id'], name=t['name'], content=str(result)))
 
     # print("Tools Execution Complete. Back to the model!")
-    return {'messages': results}
+    return AgentState(messages=results)
 
 
 graph = StateGraph(AgentState)
@@ -132,5 +165,11 @@ graph.add_conditional_edges(
 )
 graph.add_edge("retriever", "llm")
 graph.add_edge(START, "llm")
+
+
+def print_tokens_metrics(state: AgentState) -> None:
+    """Print token summary at conversation end."""
+    print_token_summary(state)
+
 
 agent: CompiledStateGraph = graph.compile(checkpointer=MemorySaver())

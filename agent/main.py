@@ -1,6 +1,6 @@
 import argparse
 
-from agent_graph import AgentState, agent
+from agent_graph import AgentState, agent, print_tokens_metrics
 from langchain_core.messages import HumanMessage
 from utils.graph_image import display_graph
 from vector_store import build_vectorstore
@@ -39,6 +39,7 @@ def cmd_run(args):
 
         print("\n=== ANSWER ===")
         print(result["messages"][-1].content)
+        print_tokens_metrics(result)
         print()
 
 

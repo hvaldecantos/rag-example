@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Annotated, NotRequired, Required, Sequence, TypedDict
 
 from dotenv import load_dotenv
@@ -23,6 +24,7 @@ vectorstore = get_vectorstore()
 class AgentState(TypedDict):
     messages: Required[Annotated[Sequence[BaseMessage], add_messages]]
     token_usage: NotRequired[dict]
+    retrieval_confidences: NotRequired[list[float]]
 
 
 @tool(description=os.getenv("RETRIEVER_TOOL_DESCRIPTION"))
@@ -96,15 +98,30 @@ def extract_token_usage(message: BaseMessage) -> dict:
     }
 
 
+def compute_answer_confidence(confidences: list[float]) -> float:
+    """Compute answer confidence as weighted average: top result counts more."""
+    if not confidences:
+        return 0.0
+    sorted_conf = sorted(confidences, reverse=True)
+    weights = [1 / (i + 1) for i in range(len(sorted_conf))]
+    weighted_sum = sum(c * w for c, w in zip(sorted_conf, weights))
+    return round(weighted_sum / sum(weights), 1)
+
+
 def print_token_summary(state: AgentState) -> None:
-    """Print total token usage for the conversation."""
+    """Print total token usage and answer confidence for the conversation."""
     token_usage = state.get('token_usage', {})
     total_input = token_usage.get('total_input', 0)
     total_output = token_usage.get('total_output', 0)
     total = total_input + total_output
 
+    confidences = state.get('retrieval_confidences', [])
+    answer_confidence = compute_answer_confidence(confidences)
+    conf_str = f"{answer_confidence}%" if confidences else "N/A"
+
     print(
-        f"\n--- TOKEN USAGE: [Input:{total_input} | Output:{total_output} | Total:{total} | Ctx window usage: {(total / CONTEXT_WINDOW) * 100:.2f}%] ---")
+        f"\n--- TOKEN USAGE: [Input:{total_input} | Output:{total_output} | Total:{total} | Ctx window usage: {(total / CONTEXT_WINDOW) * 100:.2f}%] | Answer conf.: {conf_str}) ---"
+    )
 
 
 def llm_node(state: AgentState) -> AgentState:
@@ -126,7 +143,15 @@ def llm_node(state: AgentState) -> AgentState:
         print(
             f"LLM Call: +{usage['input']} input, +{usage['output']} output tokens")
 
-    return AgentState(messages=[message], token_usage=token_usage)
+    result: AgentState = {'messages': [message], 'token_usage': token_usage}
+
+    # Reset confidences at the start of each new question (when last message is from human)
+    from langchain_core.messages import HumanMessage
+    if isinstance(state['messages'][-1], HumanMessage):
+        result['retrieval_confidences'] = []
+    return result
+
+    # return AgentState(messages=[message], token_usage=token_usage)
 
 
 def retriever_node(state: AgentState) -> AgentState:
@@ -150,8 +175,15 @@ def retriever_node(state: AgentState) -> AgentState:
         results.append(ToolMessage(
             tool_call_id=t['id'], name=t['name'], content=str(result)))
 
+    # Parse confidence scores from all tool results
+    confidences = list(state.get('retrieval_confidences', []))
+    # confidences = []
+    for msg in results:
+        for match in re.findall(r'conf\.\s*([\d.]+)%', msg.content):
+            confidences.append(float(match))
+
     # print("Tools Execution Complete. Back to the model!")
-    return AgentState(messages=results)
+    return AgentState(messages=results, retrieval_confidences=confidences)
 
 
 graph = StateGraph(AgentState)

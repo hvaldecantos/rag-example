@@ -108,10 +108,10 @@ This is an **Agentic RAG** system built with **LangGraph**, using a tool-calling
 
 ### Ingestion Pipeline
 
-1. **Document Loading** — PDFs are loaded recursively from a configured directory using `PyPDFLoader`. At the moment only text in pdf files are accepted to index data.
-2. **Chunking** — Documents are split with `RecursiveCharacterTextSplitter` (chunk size: 1000, overlap: 200). This allow splitting recursively a document, it uses common text separators like new lines until each chunk is the appropriate size. This is the recommended text splitter for generic text use cases.
-3. **Embedding** — Chunks are embedded using **Amazon Bedrock** (`amazon.titan-embed-text-v2:0`). This example is prepared to use AWS Bedrock as LLM provider.
-4. **Storage** — Embeddings are persisted in a **ChromaDB** collection using cosine similarity (`hnsw:space: cosine`). This is helpful for computing then the answer confidence level.
+1. **Document Loading** — PDFs are loaded recursively from a configured directory using `PyPDFLoader`. Currently, only text-based PDF files are supported for indexing.
+2. **Chunking** — Documents are split with `RecursiveCharacterTextSplitter` (chunk size: 1000, overlap: 200). This allows recursive splitting of documents using common text separators (such as newlines) until each chunk reaches the appropriate size. This is the recommended text splitter for generic text use cases.
+3. **Embedding** — Chunks are embedded using **Amazon Bedrock** (`amazon.titan-embed-text-v2:0`). This example is configured to use AWS Bedrock as the LLM provider.
+4. **Storage** — Embeddings are persisted in a **ChromaDB** collection using cosine similarity (`hnsw:space: cosine`). This enables the calculation of answer confidence levels.
 
 ### Retrieval & Generation
 
@@ -131,15 +131,15 @@ START → llm → (has tool calls?) → retriever → llm → ... → END
 | `retriever` | Executes the `retriever_tool` — performs `similarity_search_with_score` (top-5 chunks) against ChromaDB. |
 
 **Key design decisions:**
-- The LLM drives retrieval via **tool calling** — it can issue multiple retrieval calls before answering (multi-hop queries supported).
-- Each retrieved chunk is annotated with `source_file`, `page`, and a **confidence score** derived from cosine distance: `confidence = (1 - distance/2) * 100` of the retrieved information.
+- The LLM drives retrieval via **tool calling** — it can make multiple retrieval calls before answering (multi-hop queries are supported).
+- Each retrieved chunk is annotated with `source_file`, `page`, and a **confidence score** derived from cosine distance: `confidence = (1 - distance/2) * 100`.
 - **Conversation memory** is persisted per session via LangGraph's `MemorySaver` (in-memory checkpointer), keyed by `thread_id`. Currently it is useful only during the session, but it can be easily changed to a persisted memory with `SqliteSaver`.
 - **Token usage** is tracked across all LLM calls, with context window utilization reported after each answer.
 - A **weighted answer confidence** is computed from all retrieval scores returned during a session.
 
 ## Example
 
-This is an example that uses document from the sustainability report publish by Amazon in https://sustainability.aboutamazon.com/reports. These are documents included in this repo:
+This is an example that uses documents from the sustainability report published by Amazon at https://sustainability.aboutamazon.com/reports. The following documents are included in this repository:
 
 ```bash
 documents/
@@ -149,13 +149,18 @@ documents/
 └── 2024-sustainability-executive-summary.pdf
 ```
 
-1. Set all environment variables
+1. Set all environment variables (AWS credentials, region, model IDs) and these important:
 
 ```bash
 PERSIST_DIRECTORY = "my_embeddings/"
 DOCUMENTS_DIRECTORY = "documents/"
-COLLECTION_NAME = "sustenability_reports"
+COLLECTION_NAME = "sustainability_reports"
+
+RETRIEVER_TOOL_PROMPT="Search and return relevant excerpts from the available PDFs about Amazon sustainability executive summary."
 ```
+
+The retriever tool prompt affects how the agent decides to call the retrieval tool to fetch information from the vector store. Therefore, it is important to be specific about the subject matter of the documents you plan to upload.
+
 
 2. Run the rag agent:
 
@@ -180,7 +185,7 @@ The documents focus on water efficiency metrics and water replenishment goals ra
 --- TOKEN USAGE: [Input:6681 | Output:363 | Total:7044 | Ctx window usage: 0.70%] | Answer conf.: 79.0%) ---
 ```
 
-The agent has an in memory memory that enables the user to ask related questions like the following one:
+The agent maintains in-memory conversation history that enables users to ask follow-up questions, such as:
 
 
 ```text
@@ -203,7 +208,7 @@ It's important to note that while the documents mention plans to expand water lo
 
 ```
 
-Questions that are unrelated to the content emmbedded in the vector store are not answered:
+Questions unrelated to the content embedded in the vector store are not answered:
 
 ```text
 What is your question: who won the last futbol world cup?

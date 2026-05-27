@@ -1,6 +1,6 @@
 # A RAG Example
 
-A small AI system using Retrieval-Augmented Generation (RAG). The agent answers questions grounded in a set of PDF documents, citing sources with page numbers and confidence scores.
+A small cli AI system using Retrieval-Augmented Generation (RAG). The agent answers questions grounded in a set of PDF documents, citing sources with page numbers and confidence scores.
 
 ## Prerequisites
 
@@ -26,13 +26,29 @@ AWS_SESSION_TOKEN=...
 
 MODEL_ID="us.anthropic.claude-haiku-4-5-20251001-v1:0"
 EMBEDDINGS_MODEL_ID="amazon.titan-embed-text-v2:0"
-RETRIEVER_TOOL_PROMPT="Search and return relevant excerpts from the available PDFs about ..."
-PERSIST_DIRECTORY = "./embeddings/"
-DOCUMENTS_DIRECTORY = "./embeddings/documents"
-COLLECTION_NAME = "general"
+
+PERSIST_DIRECTORY = "embeddings/"
+DOCUMENTS_DIRECTORY = "documents/"
+COLLECTION_NAME = "sustainability_reports"
+
+RETRIEVER_TOOL_PROMPT="Search and return relevant excerpts from the available PDFs about Amazon sustainability executive summary."
 ```
 
-Then build the vector store by indexing all PDFs in `DOCUMENTS_DIRECTORY`:
+## Running the Agent
+
+To start an interactive cli session execute the following command:
+
+```bash
+uv run agent/main.py run
+```
+
+When running the agent, if the embeddings does not exist it starts the process (ingestion pipeline) to build it. 
+
+The agent keeps full conversation history within a session, so you can ask follow-up questions that reference previous answers.
+
+## Running the ingestion pipeline separately
+
+To build the vector store and indexing all PDFs in `DOCUMENTS_DIRECTORY`:
 
 ```bash
 uv run agent/main.py build
@@ -62,16 +78,6 @@ MODEL_ID="us.anthropic.claude-sonnet-4-5-20250929-v1:0"
 # Legacy models can still use the foundation model ID directly
 MODEL_ID="anthropic.claude-3-sonnet-20240229-v1:0"
 ```
-
-## Running the Agent
-
-Start an interactive session:
-
-```bash
-uv run agent/main.py run
-```
-
-The agent keeps full conversation history within a session, so you can ask follow-up questions that reference previous answers.
 
 ### Session ID
 
@@ -185,7 +191,7 @@ documents/
 1. Set all environment variables (AWS credentials, region, model IDs) and these important:
 
 ```bash
-PERSIST_DIRECTORY = "my_embeddings/"
+PERSIST_DIRECTORY = "embeddings/"
 DOCUMENTS_DIRECTORY = "documents/"
 COLLECTION_NAME = "sustainability_reports"
 

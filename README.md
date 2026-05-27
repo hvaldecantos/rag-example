@@ -137,6 +137,41 @@ START → llm → (has tool calls?) → retriever → llm → ... → END
 - **Token usage** is tracked across all LLM calls, with context window utilization reported after each answer.
 - A **weighted answer confidence** is computed from all retrieval scores returned during a session.
 
+## Handling hallucination
+
+Currently this rag agent handle hallucinations by using mandatory source citations as described in system prompt. 
+
+```
+Every factual claim must be followed by its source citation from the retrieved chunks.
+```
+Other methods to implement:
+
+1. Confidence-Based Filtering
+Currently you compute answer confidence from retrieval scores. You could add a threshold:
+
+```python
+CONFIDENCE_THRESHOLD = 60  # Require 60%+ confidence to answer
+
+if answer_confidence < CONFIDENCE_THRESHOLD:
+    response = "I don't have enough confidence in the available documents to answer this question."
+```
+2. Retrieval Validation
+Add a verification step where the LLM checks if retrieved chunks actually support its answer. 
+
+3. Temperature & Top-P Control
+
+Lower temperature during inference reduces hallucinations
+
+```python
+lm = ChatBedrockConverse(
+    model_id=os.getenv("MODEL_ID"),
+    temperature=0.2,  # Lower = more deterministic, less creative
+    top_p=0.8
+)
+```
+
+**Important Note:** Keep in mind that implementing hallucination mitigation strategies will add latency to responses. Selecting the right strategy requires balancing safety and accuracy against response time performance.
+
 ## Example
 
 This is an example that uses documents from the sustainability report published by Amazon at https://sustainability.aboutamazon.com/reports. The following documents are included in this repository:

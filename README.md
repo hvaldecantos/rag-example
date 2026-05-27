@@ -115,7 +115,7 @@ This is an **Agentic RAG** system built with **LangGraph**, using a tool-calling
 
 ### Retrieval & Generation
 
-The agent is a **LangGraph `StateGraph`** with two nodes and a conditional loop:
+The agent workflow is defined with a **LangGraph** graph with two nodes and a conditional loop:
 
 <div align="center">
 

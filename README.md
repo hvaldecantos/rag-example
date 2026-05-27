@@ -117,13 +117,11 @@ This is an **Agentic RAG** system built with **LangGraph**, using a tool-calling
 
 The agent is a **LangGraph `StateGraph`** with two nodes and a conditional loop:
 
+<div align="center">
+
 ![RAG Agent Graph](docs/rag_example_graph.png)
 
-```
-START → llm → (has tool calls?) → retriever → llm → ... → END
-                    ↓ (no tool calls)
-                   END
-```
+</div>
 
 | Node | Role |
 |---|---|

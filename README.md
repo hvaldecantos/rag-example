@@ -26,6 +26,7 @@ AWS_SESSION_TOKEN=...
 
 MODEL_ID="us.anthropic.claude-haiku-4-5-20251001-v1:0"
 EMBEDDINGS_MODEL_ID="amazon.titan-embed-text-v2:0"
+CONTEXT_WINDOW=1_000_000
 
 PERSIST_DIRECTORY = "embeddings/"
 DOCUMENTS_DIRECTORY = "documents/"

@@ -102,6 +102,41 @@ uv run agent/main.py graph --output ./docs/my_graph.png
 |------|---------|-------------|
 | `-o`, `--output` | `./docs/rag_example_graph.png` | Output file path for the graph image |
 
+## RAG Architecture
+
+This is an **Agentic RAG** system built with **LangGraph**, using a tool-calling loop rather than a simple retrieve-then-generate pipeline.
+
+### Ingestion Pipeline
+
+1. **Document Loading** — PDFs are loaded recursively from a configured directory using `PyPDFLoader`. At the moment only text in pdf files are accepted to index data.
+2. **Chunking** — Documents are split with `RecursiveCharacterTextSplitter` (chunk size: 1000, overlap: 200). This allow splitting recursively a document, it uses common text separators like new lines until each chunk is the appropriate size. This is the recommended text splitter for generic text use cases.
+3. **Embedding** — Chunks are embedded using **Amazon Bedrock** (`amazon.titan-embed-text-v2:0`). This example is prepared to use AWS Bedrock as LLM provider.
+4. **Storage** — Embeddings are persisted in a **ChromaDB** collection using cosine similarity (`hnsw:space: cosine`). This is helpful for computing then the answer confidence level.
+
+### Retrieval & Generation
+
+The agent is a **LangGraph `StateGraph`** with two nodes and a conditional loop:
+
+![RAG Agent Graph](docs/rag_example_graph.png)
+
+```
+START → llm → (has tool calls?) → retriever → llm → ... → END
+                    ↓ (no tool calls)
+                   END
+```
+
+| Node | Role |
+|---|---|
+| `llm` | Calls the AWS Bedrock LLM. Decides whether to retrieve or answer. |
+| `retriever` | Executes the `retriever_tool` — performs `similarity_search_with_score` (top-5 chunks) against ChromaDB. |
+
+**Key design decisions:**
+- The LLM drives retrieval via **tool calling** — it can issue multiple retrieval calls before answering (multi-hop queries supported).
+- Each retrieved chunk is annotated with `source_file`, `page`, and a **confidence score** derived from cosine distance: `confidence = (1 - distance/2) * 100` of the retrieved information.
+- **Conversation memory** is persisted per session via LangGraph's `MemorySaver` (in-memory checkpointer), keyed by `thread_id`. Currently it is useful only during the session, but it can be easily changed to a persisted memory with `SqliteSaver`.
+- **Token usage** is tracked across all LLM calls, with context window utilization reported after each answer.
+- A **weighted answer confidence** is computed from all retrieval scores returned during a session.
+
 ## Example
 
 This is an example that uses document from the sustainability report publish by Amazon in https://sustainability.aboutamazon.com/reports. These are documents included in this repo:
